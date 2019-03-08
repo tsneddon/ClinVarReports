@@ -87,20 +87,189 @@ def create_orgDict(infile):
             if not line.startswith('#'): #ignore lines that start with #
                 col = re.split(r'\t', line) #split on tabs
                 if not col[0] == '': #ignore empty lines
+                    if col[0] == 'Integrated Genetics/Laboratory Corporation of America; Laboratory Corporation of America':
+                        labName = 'Integrated Genetics/Laboratory Corporation of America'
 
-                    if ';' in col[0]:
-                        test = re.split('; ', col[0])
-                        if test[0] == test[1]:
-                            labName = test[0].lower()
-                        else:
-                            labName = col[0].lower()
+                    elif col[0] == 'Knight Diagnostic Laboratories; Oregon Health and Science University':
+                        labName = 'Knight Diagnostic Laboratories,Oregon Health and Sciences University'
+
+                    elif col[0] == 'Soonchunhyang University Bucheon Hospital; Soonchunhyang University Hospital':
+                        labName = 'Soonchunhyang University Bucheon Hospital,Soonchunhyang University Medical Center'
+
+                    elif col[0] == 'Center for Medical Genetics Ghent; Ghent University, Ghent University Hospital':
+                        labName = 'Center for Medical Genetics Ghent,University of Ghent'
+
+                    elif col[0] == 'ClinGen PAH Expert Panel; ClinGen':
+                        labName = 'ClinGen PAH Variant Curation Expert Panel,'
+
+                    elif col[0] == 'CSER _CC_NCGL; University of Washington':
+                        labName = 'CSER_CC_NCGL; University of Washington Medical Center'
+
+                    elif col[0] == "Dr. Faghihi's Medical Genetic Center; Shiraz University of Medical Sciences":
+                        labName = "Dr. Faghihi's Medical Genetic Center"
+
+                    elif col[0] == 'InterGenetics; InterGenetics-Center for Human Genetics and Genomics':
+                        labName = 'InterGenetics'
+
+                    elif col[0] == 'NeuroMeGen; Hospital Clinico Universitario de Santiago de Compostela':
+                        labName = 'NeuroMeGen,Hospital Clinico Santiago de Compostela'
+
+                    elif col[0] == 'Cardiovascular Research Group; Instituto Nacional de Saúde Doutor Ricardo Jorge':
+                        labName = 'Cardiovascular Research Group,Instituto Nacional de Saude Doutor Ricardo Jorge'
+
+                    elif col[0] == 'Genetics and Molecular Pathology; SA Pathology':
+                        labName = 'Molecular Pathology, SA Pathology'
+
+                    elif col[0] == 'LDLR-LOVD, British Heart Foundation, Department of Cardiovascular Genetics; University College London':
+                        labName = 'LDLR-LOVD, British Heart Foundation'
+
+                    elif col[0] == 'Undiagnosed Diseases Network; National Institutes of Health':
+                        labName = 'Undiagnosed Diseases Network,NIH'
+
+                    elif col[0] == 'Centre for Translational Omics; University College London':
+                        labName = 'Centre for Translational Omics - GOSgene,University College London'
+
+                    elif col[0] == 'Institute for Ophthalmic Research; University of Tuebingen':
+                        labName = 'Institute for Ophthalmic Research,University Tuebingen'
+
+                    elif col[0] == 'Section of Genetics; University of Leeds':
+                        labName = 'Molecular Medicine,University of Leeds'
+
+                    elif col[0] == 'Medical Genetics Summaries; National Institutes of Health':
+                        labName = 'Medical Genetics Summaries'
+
+                    elif col[0] == 'LISIN; Facultad de Ciencias Exactas, Universidad Nacional de La Plata':
+                        labName = 'LISIN Facultad de Ciencias Exactas, Universidad Nacional de La Plata'
+
+                    elif col[0] == 'Inova Translational Medicine Institute':
+                        labName = 'ITMI'
+
+                    elif col[0] == 'Cardiovascular Biomedical Research Unit; Royal Brompton and Harefield NHS Foundation Trust':
+                        labName = 'Cardiovascular Biomedical Research Unit,Royal Brompton & Harefield NHS Foundation Trust'
+
+                    elif col[0] == 'State Key Laboratory of Medical Genetics and School of Life Sciences; Central South University':
+                        labName = 'State Key Lab of Medical Genetics, Central South University'
+
+                    elif col[0] == "Shenzhen Institute of Pediatrics; Shenzhen Children’s Hospital":
+                        labName = "Shenzhen Institute of Pediatrics,Shenzhen Children's Hospital"
+
+                    elif col[0] == 'Shiraz Institute for Cancer Research; Shiraz University of Medical Sciences':
+                        labName = 'Shiraz Institute for Cancer Research, Shiraz University of Medical Sciences'
+
+                    elif col[0] == 'Oxford Medical Genetics Laboratories; Oxford University Hospitals NHS Trust':
+                        labName = 'Oxford Medical Genetics Laboratories,Oxford University Hospitals NHS Foundation Trust'
+
+                    elif col[0] == 'Instituto de Investigación Sanitaria; Pfizer-University of Granada-Junta de Andalucia Centre for Genomics and Oncological Research':
+                        labName = 'Otology & Neurotology- Genomics of vestibular disorders (CTS-495),Jose Antonio López Escámez, Centro Pfizer - Universidad de Granada - Junta de Andalucía de Genómica e Investigación Oncológica (GENYO)'
+
+                    elif col[0] == 'Richard Lifton Laboratory; Yale University':
+                        labName = 'Richard Lifton Laboratory, Yale University School of Medicine'
+
+                    elif col[0] == 'Medical Molecular Genetics Department; National Research Center':
+                        labName = 'Medical Molecular Genetics,National Research Centre'
+
+                    elif col[0] == 'Research lab; Department Functional Genomics and Cancer, Team Leader: Stéphane Viville; Institute of Genetics and Molecular and Cellular Biology':
+                        labName = 'Research lab,Institute of Genetics and Molecular and Cellular Biology'
+
+                    elif col[0] == 'Science and Research Branch, Islamic Azad University; Islamic Azad Universit':
+                        labName = 'Science and Research Branch, Islamic Azad University,Islamic Azad University'
+
+                    elif col[0] == 'National Institute of Mental Health and Neurosciences; National Instiute of Mental Health and Neurosciences':
+                        labName = 'National Institute of Mental Health and Neurosciences'
+
+                    elif col[0] == 'Leeds Amelogenesis Imperfecta Research Group; University of Leeds':
+                        labName = 'Leeds Amelogenesis Imperfecta Research Group,Leeds University'
+
+                    elif col[0] == 'Genetics of Learning Disability Service; Hunter Genetics':
+                        labName = 'GOLD service, Hunter New England Health'
+
+                    elif col[0] == 'Department of Clinical Genetics; Oxford University Hospitals NHS Foundation Trust':
+                        labName = 'Department of Clinical Genetics,Oxford University Hospitals NHS Trust'
+
+                    elif col[0] == 'Department of Research and Development; Instituto Hermes Pardini':
+                        labName = 'Department of Research and Development,Institute Hermes Pardini'
+
+                    elif col[0] == 'Colorectal Cancer Research Laboratory; Singapore General Hospital':
+                        labName = 'Colorectal Cancer Research Lab, Singapore General Hospital'
+
+                    elif col[0] == 'CHU Sainte-Justine Research Center; Université de Montréal':
+                        labName = 'CHU Sainte-Justine Research Center,University of Montreal'
+
+                    elif col[0] == 'Thelma Laboratory; University of Delhi South Campus':
+                        labName = "Prof. Thelma's Laboratory, Department of Genetics,University of Delhi South Campus"
+
+                    elif col[0] == 'Strand Center for Genomics and Personalized Medicine; Strand Life Sciences Private Limited':
+                        labName = 'Strand Center for Genomics and Personalized Medicine,Strand Life Sciences Pvt Ltd'
+
+                    elif col[0] == 'Center for Neuroscience and Cell Biology; University of Coimbra':
+                        labName = 'Center for Neuroscience and Cell Biology,University of Coimbra, Portugal'
+
+                    elif col[0] == 'SNPedia; River Road Bio':
+                        labName = 'SNPedia'
+
+                    elif col[0] == 'DNA Repair Laboratory; Institute of Biomedical Sciences - University of São Paulo':
+                        labName = 'DNA Repair Laboratory,Institute of Biomedical Sciences - University of Sao Paulo'
+
+                    elif col[0] == 'Clinical Genetics Unit; Atomic Energy Commission of Syria (AECS)':
+                        labName = 'Atomic Energy Commission of Syria (AECS)'
+
+                    elif col[0] == 'Erasmus University Medical Center; Erasmus University Medical Center':
+                        labName = 'Clinical Genetics, Erasmus University Medical Center'
+
+                    elif col[0] == 'Department of Medical Genetics, School of Medicine; Tehran University of Medical Sciences':
+                        labName = 'Department of Medical Genetics, School of Medicine,Tehran University of Medical Sciences (TUMS)'
+
+                    elif col[0] == "Children's Diabetes Center; University of Wisconsin-Madison":
+                        labName = 'Childrens Diabetes Center,University of Wisconsin-Madison'
+
+                    elif col[0] == 'Warsaw Genomics; University of Warsaw':
+                        labName = 'Warsaw Genomics'
+
+                    elif col[0] == 'Biochimie - Maladies Neurologiques Hereditaires':
+                        labName = 'Biochimie - Maladies Neurologiques Hereditaires,Hospices Civils de Lyon'
+
+                    elif col[0] == 'Genomics and Pathology Services; Washington University in St. Louis':
+                        labName = 'Genomics and Pathology Services,Washington University in St.Louis'
+
+                    elif col[0] == 'Laboratory of Drosophila Research; The Chinese University of Hong Kong':
+                        labName = 'Faculty of Science, Laboratory of Drosophila Research, School of Life Sciences,The Chinese University of Hong Kong, Hong Kong'
+
+                    elif col[0] == 'Clinical Genetics; Karolinska University Hospital':
+                        labName = 'Clinical Genetics Karolinska University Hospital,Karolinska University Hospital'
+
+                    elif col[0] == 'Imagine Institut; INSERM':
+                        labName = 'Institut IMAGINE,Institut National de la Sante et de la Recherche Medicale'
+
+                    elif col[0] == 'Medical Genetics; Necip Fazil Sehir Hastanesi':
+                        labName = 'Medical Genetics,Necip Fazıl Sehir Hastanesi'
+
                     else:
-                        labName = col[0].lower()
+                        if ';' in col[0] and 'PreventionGenetics' not in col[0] and 'Fulgent Genetics' not in col[0]:
+                            test = re.split('; ', col[0])
+                            if test[0] == test[1]:
+                                labName = test[0]
+                            else:
+                                labName = col[0]
+                        else:
+                            labName = col[0]
 
+                    labName = labName.lower()
+                    labName = labName.rstrip()
+                    labName = re.sub(', ', ',', labName)
                     labName = re.sub('; ', ',', labName)
+                    labName = re.sub('  ', ' ', labName)
+
                     labID = int(col[1])
 
                     orgDict[labName] = int(labID)
+
+    #add submitters not in the org file
+    orgDict['cole/wambach lab,washington university in st. louis'] = 506738
+    orgDict['department of endocrinology and genetic metabolic diseases,children’s hospital of chongqing medical university'] = 506686
+    orgDict['department of pediatrics and developmental biology,tokyo medical and dental university'] = 506787
+    orgDict['institute of bioinformatics'] = 506863
+    orgDict['routes lab,medical college of wisconsin'] = 506876
+    orgDict['department of immunology and histocompatibility,university of thessaly'] = 506737
 
     input.close()
     os.remove(infile)
@@ -140,11 +309,14 @@ def create_scvHash(gzfile, arg):
                     colMeth = col[7]
 
                     submitter = col[9]
+                    submitter = submitter.rstrip(',')
+                    submitter = re.sub(', ', ',', submitter)
+                    submitter = re.sub('; ', ',', submitter)
 
-                    if col[9].lower() in orgDict:
-                        orgID = orgDict[col[9].lower()]
+                    if submitter.lower() in orgDict:
+                        orgID = orgDict[submitter.lower()]
                     else:
-                        orgID = 'None'
+                        orgID = 'None'        
 
                     submitter = re.sub(r'\s+', '_', submitter) #replace all spaces with an underscore
                     submitter = re.sub(r'/', '-', submitter) # replace all slashes with a hyphen
