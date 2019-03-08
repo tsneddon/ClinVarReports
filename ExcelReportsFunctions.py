@@ -9,11 +9,12 @@ import re
 import pprint
 import xlsxwriter
 
+orgDict = {}
 scvHash = {}
 a2vHash = {}
 HGVSHash = {}
 EPHash = {}
-subList = []
+subList = {}
 today = datetime.datetime.today().strftime('%Y%m%d') #todays date YYYYMMDD
 
 
@@ -74,12 +75,43 @@ def print_date(date):
     return(printDate)
 
 
+def create_orgDict(infile):
+    '''This function makes a dictionary from the ClinVar organization_summary.txt file'''
+
+    with open(infile, 'rt') as input:
+        line = input.readline()
+
+        while line:
+            line = input.readline()
+
+            if not line.startswith('#'): #ignore lines that start with #
+                col = re.split(r'\t', line) #split on tabs
+                if not col[0] == '': #ignore empty lines
+
+                    if ';' in col[0]:
+                        test = re.split('; ', col[0])
+                        if test[0] == test[1]:
+                            labName = test[0].lower()
+                        else:
+                            labName = col[0].lower()
+                    else:
+                        labName = col[0].lower()
+
+                    labName = re.sub('; ', ',', labName)
+                    labID = int(col[1])
+
+                    orgDict[labName] = int(labID)
+
+    input.close()
+    os.remove(infile)
+    return(orgDict)
+
+
 def create_scvHash(gzfile, arg):
     '''This function makes a hash of each SCV in each VarID'''
 
     global subList
-    includeList = []
-    excludeList = []
+    excludeList = {}
 
     with gzip.open(gzfile, 'rt') as input:
         line = input.readline()
@@ -108,11 +140,17 @@ def create_scvHash(gzfile, arg):
                     colMeth = col[7]
 
                     submitter = col[9]
+
+                    if col[9].lower() in orgDict:
+                        orgID = orgDict[col[9].lower()]
+                    else:
+                        orgID = 'None'
+
                     submitter = re.sub(r'\s+', '_', submitter) #replace all spaces with an underscore
                     submitter = re.sub(r'/', '-', submitter) # replace all slashes with a hyphen
                     submitter = re.sub(r'\W+', '', submitter) #remove all non-alphanumerics
 
-                    submitter = submitter[0:50]
+                    submitter = submitter[0:45]
 
                     SCV = col[10]
 
@@ -120,25 +158,25 @@ def create_scvHash(gzfile, arg):
                         EPHash[varID] = {'ClinSig':clinSig, 'Submitter':submitter, 'DateLastEval':dateLastEval}
 
                     if arg == 'OneStar' and submitter not in subList and revStat == 'criteria provided, single submitter' and 'clinical testing' in colMeth:
-                        subList.append(submitter)
+                        subList[submitter] = orgID
 
                     if arg == 'ZeroStar':
-                        if revStat == 'no assertion criteria provided' and submitter not in includeList:
-                            includeList.append(submitter)
+                        if revStat == 'no assertion criteria provided' and submitter not in subList:
+                            subList[submitter] = orgID
 
                         if revStat == 'criteria provided, single submitter' and 'clinical testing' in colMeth and submitter not in excludeList:
-                            excludeList.append(submitter)
-
-                    if arg == 'GenomeConnect' and 'GenomeConnect' in submitter and submitter not in subList:
-                        subList.append(submitter)
+                            excludeList[submitter] = orgID
 
                     if varID not in scvHash.keys():
                         scvHash[varID] = {}
 
-                    scvHash[varID][SCV] = {'ClinSig':clinSig, 'DateLastEval':dateLastEval, 'Submitter':submitter, 'ReviewStatus':revStat, 'ColMeth':colMeth, 'Condition':condition}
+                    scvHash[varID][SCV] = {'ClinSig':clinSig, 'DateLastEval':dateLastEval, 'Submitter':submitter, 'ReviewStatus':revStat, 'ColMeth':colMeth, 'Condition':condition, 'OrgID':orgID}
 
     if arg == 'ZeroStar':
-        subList = [x for x in includeList if x not in excludeList]
+        for key in excludeList:
+            if key in subList:
+                del subList[key]
+        #subList = [x for x in includeList if x not in excludeList]
     input.close()
     os.remove(gzfile)
     return(scvHash, EPHash, subList)
@@ -229,12 +267,13 @@ def create_files(ExcelDir, excelFile, date, statFile, arg):
         worksheetStat0 = workbookStat.add_worksheet('1StarStats')
         worksheetStat0.write(0, 0, '1-Star submitter')
 
-    worksheetStat0.write(0, 1, '1. Outlier_PLPvsVLBB')
-    worksheetStat0.write(0, 2, '2. Consensus_PLPvsVLBB')
-    worksheetStat0.write(0, 3, '3. NoConsensus_PLPvsVLBB')
-    worksheetStat0.write(0, 4, '4. VUSvsLBB')
-    worksheetStat0.write(0, 5, '5. IntraLab_discrepancy')
-    worksheetStat0.write(0, 6, '6. Lab_vs_EP')
+    worksheetStat0.write(0, 1, 'OrgID')
+    worksheetStat0.write(0, 2, '1. Outlier_PLPvsVLBB')
+    worksheetStat0.write(0, 3, '2. Consensus_PLPvsVLBB')
+    worksheetStat0.write(0, 4, '3. NoConsensus_PLPvsVLBB')
+    worksheetStat0.write(0, 5, '4. VUSvsLBB')
+    worksheetStat0.write(0, 6, '5. IntraLab_discrepancy')
+    worksheetStat0.write(0, 7, '6. Lab_vs_EP')
 
     create_tabs(ExcelDir, excelFile, date, workbookStat, worksheetStat0, arg)
 
@@ -249,8 +288,9 @@ def create_tabs(ExcelDir, excelFile, date, workbookStat, worksheetStat0, arg):
 
         count += 1
         worksheetStat0.write(count, 0, sub)
+        worksheetStat0.write(count, 1, subList[sub])
 
-        sub_output_file = dir + '/' + sub + '_' + excelFile
+        sub_output_file = dir + '/' + sub + '[' + str(subList[sub]) + ']_' + excelFile
 
         workbook = xlsxwriter.Workbook(sub_output_file)
         worksheet0 = workbook.add_worksheet('README')
