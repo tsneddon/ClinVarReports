@@ -1,4 +1,4 @@
-#Must run as >python3 GenericClinVarExcelReport.py arg
+#Must run as >python3 ClinVarExcelReports.py arg
 #Arg options are 'ZeroStar', 'OneStar'
 #The script outputs an Excel file(with the last modfified date of the FTP file) for each submitter:
 #1. Outlier_PLPvsVLBB: ClinVar variants where the submitter clinical significance [P/LP] vs [VUS/LB/B] is discrepant from the majority (>= 2/3) of 1-star clinical submitters.
@@ -12,18 +12,20 @@ from ExcelReportsFunctions import *
 
 def main():
 
-    inputFile1 = 'submission_summary.txt.gz'
-    inputFile2 = 'variation_allele.txt.gz'
-    inputFile3 = 'variant_summary.txt.gz'
+    inputFile1 = 'organization_summary.txt'
+    inputFile2 = 'submission_summary.txt.gz'
+    inputFile3 = 'variation_allele.txt.gz'
+    inputFile4 = 'variant_summary.txt.gz'
 
     arg = sys.argv[1]
     #Options are 'ZeroStar', 'OneStar'
 
-    dir = 'Generic_ClinVar' + arg + 'Reports'
+    dir = 'ClinVar' + arg + 'Reports'
 
-    date = get_file(inputFile1)
-    get_file(inputFile2)
+    get_file(inputFile1)
+    date = get_file(inputFile2)
     get_file(inputFile3)
+    get_file(inputFile4)
 
     ExcelDir = make_directory(dir, date, arg)
 
@@ -31,9 +33,10 @@ def main():
 
     statFile = '_' + arg + 'ReportsStats_' + date + '.xlsx'
 
-    create_scvHash(inputFile1, arg)
-    create_a2vHash(inputFile2)
-    create_HGVSHash(inputFile3)
+    create_orgDict(inputFile1)
+    create_scvHash(inputFile2, arg)
+    create_a2vHash(inputFile3)
+    create_HGVSHash(inputFile4)
 
     create_files(ExcelDir, excelFile, date, statFile, arg)
 
