@@ -22,10 +22,10 @@ def main():
 
     dir = 'ClinVar' + arg + 'Reports'
 
-    get_file(inputFile1)
-    date = get_file(inputFile2)
-    get_file(inputFile3)
-    get_file(inputFile4)
+    get_file(inputFile1, 'pub/clinvar/xml/')
+    date = get_file(inputFile2, '/pub/clinvar/tab_delimited/')
+    get_file(inputFile3, '/pub/clinvar/tab_delimited/')
+    get_file(inputFile4, '/pub/clinvar/tab_delimited/')
 
     ExcelDir = make_directory(dir, date, arg)
 
