@@ -93,7 +93,6 @@ def create_orgDict(gzfile):
                 elem.clear()
 
     input.close()
-    #pprint.pprint(orgDict)
     os.remove(gzfile)
     return(orgDict)
 
@@ -328,7 +327,7 @@ def create_tab1(sub, workbook, worksheet0, worksheetStat0, count, arg):
         row = print_variants(sub, worksheet1, row, varID, headerSubs, varSubs, p2fileVarIDs, tab)
 
     print_stats(worksheet0, 7, 0, row)
-    print_stats2file(worksheetStat0, count, 1, row)
+    print_stats2file(worksheetStat0, count, 2, row)
 
 
 def create_tab2(sub, workbook, worksheet0, worksheetStat0, count, arg):
@@ -351,7 +350,7 @@ def create_tab2(sub, workbook, worksheet0, worksheetStat0, count, arg):
         row = print_variants(sub, worksheet2, row, varID, headerSubs, varSubs, p2fileVarIDs, tab)
 
     print_stats(worksheet0, 8, 0, row)
-    print_stats2file(worksheetStat0, count, 2, row)
+    print_stats2file(worksheetStat0, count, 3, row)
 
 
 def create_tab3(sub, workbook, worksheet0, worksheetStat0, count, arg):
@@ -374,7 +373,7 @@ def create_tab3(sub, workbook, worksheet0, worksheetStat0, count, arg):
         row = print_variants(sub, worksheet3, row, varID, headerSubs, varSubs, p2fileVarIDs, tab)
 
     print_stats(worksheet0, 9, 0, row)
-    print_stats2file(worksheetStat0, count, 3, row)
+    print_stats2file(worksheetStat0, count, 4, row)
 
 
 def create_tab4(sub, workbook, worksheet0, worksheetStat0, count, arg):
@@ -397,7 +396,7 @@ def create_tab4(sub, workbook, worksheet0, worksheetStat0, count, arg):
         row = print_variants(sub, worksheet4, row, varID, headerSubs, varSubs, p2fileVarIDs, tab)
 
     print_stats(worksheet0, 10, 0, row)
-    print_stats2file(worksheetStat0, count, 4, row)
+    print_stats2file(worksheetStat0, count, 5, row)
 
 
 def create_tab5(sub, workbook, worksheet0, worksheetStat0, count, arg):
@@ -420,7 +419,7 @@ def create_tab5(sub, workbook, worksheet0, worksheetStat0, count, arg):
         row = print_variants(sub, worksheet5, row, varID, headerSubs, varSubs, p2fileVarIDs, tab)
 
     print_stats(worksheet0, 11, 0, row)
-    print_stats2file(worksheetStat0, count, 5, row)
+    print_stats2file(worksheetStat0, count, 6, row)
 
 
 def create_tab6(sub, workbook, worksheet0, worksheetStat0, count, arg):
@@ -443,7 +442,7 @@ def create_tab6(sub, workbook, worksheet0, worksheetStat0, count, arg):
         row = print_variants(sub, worksheet6, row, varID, headerSubs, varSubs, p2fileVarIDs, tab)
 
     print_stats(worksheet0, 12, 0, row)
-    print_stats2file(worksheetStat0, count, 6, row)
+    print_stats2file(worksheetStat0, count, 7, row)
 
 
 def outlier_medsig(varID, sub, headerSubs, p2fileVarIDs, arg):
@@ -941,7 +940,7 @@ def print_header(sub, p2fileVarIDs, headerSubs, worksheet, tab):
     '''This function prints all the header titles to the Excel tabs'''
 
     k = 0
-    if p2fileVarIDs != []:
+    if p2fileVarIDs != {}:
         worksheet.write(0, k, 'VarID')
         k+=1
         worksheet.write(0, k, 'Gene_symbol')
