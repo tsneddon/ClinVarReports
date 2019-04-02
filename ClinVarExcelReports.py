@@ -14,7 +14,6 @@ def main():
 
     get_file(inputFile1, 'pub/clinvar/xml/')
     date = get_file(inputFile2, '/pub/clinvar/tab_delimited/')
-    #date = '03-05-2019'
     get_file(inputFile3, '/pub/clinvar/tab_delimited/')
     get_file(inputFile4, '/pub/clinvar/tab_delimited/')
 
