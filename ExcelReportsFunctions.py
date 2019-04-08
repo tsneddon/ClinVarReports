@@ -81,11 +81,11 @@ def create_orgDict(gzfile):
     with gzip.open(gzfile) as input:
         for event, elem in ET.iterparse(input):
 
-            if elem.tag == 'ClinVarSet':
-                for ClinAss in elem.iter(tag='ClinVarAssertion'):
+            if elem.tag == 'VariationArchive':
+                for ClinAss in elem.iter(tag='ClinicalAssertion'):
                     for ClinAcc in ClinAss.iter(tag='ClinVarAccession'):
                         orgID = int(ClinAcc.attrib['OrgID'])
-                        accession = ClinAcc.attrib['Acc']
+                        accession = ClinAcc.attrib['Accession']
 
                         if accession not in orgDict:
                             orgDict[accession] = orgID
