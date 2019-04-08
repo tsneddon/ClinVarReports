@@ -2,7 +2,7 @@ from ExcelReportsFunctions import *
 
 def main():
 
-    inputFile1 = 'ClinVarFullRelease_00-latest.xml.gz'
+    inputFile1 = 'ClinVarVariationRelease_00-latest.xml.gz'
     inputFile2 = 'submission_summary.txt.gz'
     inputFile3 = 'variation_allele.txt.gz'
     inputFile4 = 'variant_summary.txt.gz'
@@ -12,7 +12,7 @@ def main():
 
     dir = 'ClinVar' + arg + 'Reports'
 
-    get_file(inputFile1, 'pub/clinvar/xml/')
+    get_file(inputFile1, '/pub/clinvar/xml/clinvar_variation/')
     date = get_file(inputFile2, '/pub/clinvar/tab_delimited/')
     get_file(inputFile3, '/pub/clinvar/tab_delimited/')
     get_file(inputFile4, '/pub/clinvar/tab_delimited/')
