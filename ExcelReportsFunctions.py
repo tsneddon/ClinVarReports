@@ -15,7 +15,15 @@ scvHash = {}
 a2vHash = {}
 HGVSHash = {}
 EPHash = {}
+starVars = []
 subList = {}
+PLP = 0
+VUS = 0
+LBB = 0
+PLPVUS = 0
+PLPLBB = 0
+PLPVUSLBB = 0
+VUSLBB = 0
 today = datetime.datetime.today().strftime('%Y%m%d') #todays date YYYYMMDD
 
 
@@ -97,80 +105,6 @@ def create_orgDict(gzfile):
     return(orgDict)
 
 
-def create_scvHash(gzfile, arg):
-    '''This function makes a hash of each SCV in each VarID'''
-
-    global subList
-    excludeList = {}
-
-    with gzip.open(gzfile, 'rt') as input:
-        line = input.readline()
-
-        while line:
-            line = input.readline()
-
-            if not line.startswith('#'): #ignore lines that start with #
-                col = re.split(r'\t', line) #split on tabs
-                if not col[0] == '': #ignore empty lines
-                    varID = int(col[0])
-                    clinSig = col[1]
-                    rawDate = col[2]
-                    dateLastEval = convert_date(rawDate) #convert date eg May 02, 2018 -> YYYYMMDD
-
-                    conditionList = []
-                    rawConditionList = col[5].split(';')
-                    for item in rawConditionList:
-                        if ':'in item:
-                            item = item.split(':', 1)[1]
-                        conditionList.append(item)
-
-                    condition = '; '.join(sorted(set(conditionList)))
-
-                    revStat = col[6]
-                    colMeth = col[7]
-
-                    submitter = col[9]
-                    submitter = submitter.rstrip()
-                    submitter = re.sub('[^0-9a-zA-Z]+', '_', submitter)
-
-                    submitter = submitter[0:45]
-
-                    SCV = col[10]
-                    accession = col[10].split('.', 1)[0]
-
-                    if accession in orgDict:
-                        orgID = orgDict[accession]
-                    else:
-                        orgID = 'None'
-
-                    if (revStat == 'reviewed by expert panel' or revStat == 'practice guideline') and 'PharmGKB' not in submitter: #-- to exclude PharmGKB records
-                        EPHash[varID] = {'ClinSig':clinSig, 'Submitter':submitter, 'DateLastEval':dateLastEval, 'OrgID':orgID}
-
-                    if arg == 'OneStar' and submitter not in subList and revStat == 'criteria provided, single submitter' and 'clinical testing' in colMeth:
-                        subList[submitter] = orgID
-
-                    if arg == 'ZeroStar':
-                        if revStat == 'no assertion criteria provided' and submitter not in subList:
-                            subList[submitter] = orgID
-
-                        if revStat == 'criteria provided, single submitter' and 'clinical testing' in colMeth and submitter not in excludeList:
-                            excludeList[submitter] = orgID
-
-                    if varID not in scvHash.keys():
-                        scvHash[varID] = {}
-
-                    scvHash[varID][SCV] = {'ClinSig':clinSig, 'DateLastEval':dateLastEval, 'Submitter':submitter, 'ReviewStatus':revStat, 'ColMeth':colMeth, 'Condition':condition, 'OrgID':orgID}
-
-    if arg == 'ZeroStar':
-        for key in excludeList:
-            if key in subList:
-                del subList[key]
-
-    input.close()
-    os.remove(gzfile)
-    return(scvHash, EPHash, subList)
-
-
 def create_a2vHash(gzfile):
     '''This function makes a dictionary of VarID to AlleleID'''
 
@@ -221,6 +155,86 @@ def create_HGVSHash(gzfile):
     input.close()
     os.remove(gzfile)
     return(HGVSHash)
+
+
+def create_scvHash(gzfile, arg):
+    '''This function makes a hash of each SCV in each VarID'''
+
+    global subList
+    excludeList = {}
+
+    with gzip.open(gzfile, 'rt') as input:
+        line = input.readline()
+
+        while line:
+            line = input.readline()
+
+            if not line.startswith('#'): #ignore lines that start with #
+                col = re.split(r'\t', line) #split on tabs
+                if not col[0] == '' and int(col[0]) in HGVSHash: #ignore empty lines and complex variants
+                    varID = int(col[0])
+                    clinSig = col[1]
+                    rawDate = col[2]
+                    dateLastEval = convert_date(rawDate) #convert date eg May 02, 2018 -> YYYYMMDD
+
+                    conditionList = []
+                    rawConditionList = col[5].split(';')
+                    for item in rawConditionList:
+                        if ':'in item:
+                            item = item.split(':', 1)[1]
+                        conditionList.append(item)
+
+                    condition = '; '.join(sorted(set(conditionList)))
+
+                    revStat = col[6]
+                    colMeth = col[7]
+
+                    submitter = col[9]
+                    submitter = submitter.rstrip()
+                    submitter = re.sub('[^0-9a-zA-Z]+', '_', submitter)
+
+                    submitter = submitter[0:45]
+
+                    SCV = col[10]
+                    accession = col[10].split('.', 1)[0]
+
+                    if accession in orgDict:
+                        orgID = orgDict[accession]
+                    else:
+                        orgID = 'None'
+
+                    if (revStat == 'reviewed by expert panel' or revStat == 'practice guideline') and 'PharmGKB' not in submitter: #-- to exclude PharmGKB records
+                        EPHash[varID] = {'ClinSig':clinSig, 'Submitter':submitter, 'DateLastEval':dateLastEval, 'OrgID':orgID}
+
+                    if arg == 'OneStar' and revStat == 'criteria provided, single submitter' and 'clinical testing' in colMeth:
+                        if submitter not in subList:
+                            subList[submitter] = orgID
+                        if varID not in starVars:
+                            starVars.append(varID)
+
+                    if arg == 'ZeroStar':
+                        if revStat == 'no assertion criteria provided':
+                            if submitter not in subList:
+                                subList[submitter] = orgID
+                            if varID not in starVars:
+                                starVars.append(varID)
+
+                        if revStat == 'criteria provided, single submitter' and 'clinical testing' in colMeth and submitter not in excludeList:
+                            excludeList[submitter] = orgID
+
+                    if varID not in scvHash.keys():
+                        scvHash[varID] = {}
+
+                    scvHash[varID][SCV] = {'ClinSig':clinSig, 'DateLastEval':dateLastEval, 'Submitter':submitter, 'ReviewStatus':revStat, 'ColMeth':colMeth, 'Condition':condition, 'OrgID':orgID}
+
+    if arg == 'ZeroStar':
+        for key in excludeList:
+            if key in subList:
+                del subList[key]
+
+    input.close()
+    os.remove(gzfile)
+    return(scvHash, EPHash, subList, starVars)
 
 
 def create_files(ExcelDir, excelFile, date, statFile, arg):
@@ -298,11 +312,17 @@ def create_tabs(ExcelDir, excelFile, date, workbookStat, worksheetStat0, arg):
         worksheet0.write(14, 0, 'Note: Tab classification counts are for unique submissions only i.e. if the same variant is submitted twice as Pathogenic by the same submitter, it will only be counted once')
         worksheet0.write(15, 0, 'Note: A variant can occur in multiple tabs i.e. if the same variant is submitted twice, once as Pathogenic and once as Benign by the same submitter, the variant could be both an outlier and the consensus')
 
+        counter = 0
+
         tabList = [create_tab1, create_tab2, create_tab3, create_tab4, create_tab5, create_tab6]
+
         for tab in tabList:
-            tab(sub, workbook, worksheet0, worksheetStat0, count, arg)
+            counter += tab(sub, workbook, worksheet0, worksheetStat0, count, arg)
 
         workbook.close()
+
+        if counter == 0:
+            os.remove(sub_output_file)
 
     workbookStat.close()
 
@@ -329,6 +349,8 @@ def create_tab1(sub, workbook, worksheet0, worksheetStat0, count, arg):
     print_stats(worksheet0, 7, 0, row)
     print_stats2file(worksheetStat0, count, 2, row)
 
+    return(row)
+
 
 def create_tab2(sub, workbook, worksheet0, worksheetStat0, count, arg):
     '''This function creates the Tab#2 (Consensus_PLPvsVLBB) in the Excel file'''
@@ -351,6 +373,8 @@ def create_tab2(sub, workbook, worksheet0, worksheetStat0, count, arg):
 
     print_stats(worksheet0, 8, 0, row)
     print_stats2file(worksheetStat0, count, 3, row)
+
+    return(row)
 
 
 def create_tab3(sub, workbook, worksheet0, worksheetStat0, count, arg):
@@ -375,6 +399,8 @@ def create_tab3(sub, workbook, worksheet0, worksheetStat0, count, arg):
     print_stats(worksheet0, 9, 0, row)
     print_stats2file(worksheetStat0, count, 4, row)
 
+    return(row)
+
 
 def create_tab4(sub, workbook, worksheet0, worksheetStat0, count, arg):
     '''This function creates the Tab#4 (VUSvsLBB) in the Excel file'''
@@ -397,6 +423,8 @@ def create_tab4(sub, workbook, worksheet0, worksheetStat0, count, arg):
 
     print_stats(worksheet0, 10, 0, row)
     print_stats2file(worksheetStat0, count, 5, row)
+
+    return(row)
 
 
 def create_tab5(sub, workbook, worksheet0, worksheetStat0, count, arg):
@@ -421,6 +449,8 @@ def create_tab5(sub, workbook, worksheet0, worksheetStat0, count, arg):
     print_stats(worksheet0, 11, 0, row)
     print_stats2file(worksheetStat0, count, 6, row)
 
+    return(row)
+
 
 def create_tab6(sub, workbook, worksheet0, worksheetStat0, count, arg):
     '''This function creates the Tab#6 (Lab_vs_EP) in the Excel file'''
@@ -443,6 +473,66 @@ def create_tab6(sub, workbook, worksheet0, worksheetStat0, count, arg):
 
     print_stats(worksheet0, 12, 0, row)
     print_stats2file(worksheetStat0, count, 7, row)
+
+    return(row)
+
+
+def create_distFile(ExcelDir, distFile, date, arg):
+
+    dir = ExcelDir
+    sub = ''
+    tab = 0
+    row = 0
+
+    p2fileVarIDs = {}
+    headerSubs = []
+
+    dist_output_file = dir + '/' + distFile
+
+    workbookDist = xlsxwriter.Workbook(dist_output_file)
+
+    worksheetDist0 = workbookDist.add_worksheet('Stats')
+    worksheetDist1 = workbookDist.add_worksheet('Distribution')
+
+    for varID in starVars:
+        p2fileVarIDs, headerSubs = get_distVars(varID, headerSubs, p2fileVarIDs, arg)
+
+    print_header(sub, p2fileVarIDs, headerSubs, worksheetDist1, tab)
+
+    for varID in p2fileVarIDs:
+        varSubs = get_varSubs(sub, varID)
+        row = print_variants(sub, worksheetDist1, row, varID, headerSubs, varSubs, p2fileVarIDs, tab)
+
+    add_stats(worksheetDist0, date, arg, headerSubs)
+
+    workbookDist.close()
+
+
+def add_stats(worksheet, date, arg, headerSubs):
+
+    totalVars = PLP + VUS + LBB + PLPVUS + PLPLBB + PLPVUSLBB + VUSLBB
+
+    if arg == 'OneStar':
+        worksheet.write(0, 0, str(totalVars) + ' variants with >= 2 interpretations involving ' + str(len(headerSubs)) + '/' + str(len(subList)) + ' ' + ' OneStar clinical labs as of ' + date)
+    if arg == 'ZeroStar':
+        worksheet.write(0, 0, str(totalVars) + ' variants with >= 2 interpretations involving ' + str(len(headerSubs)) + '/' + str(len(subList)) + ' ' + ' ZeroStar submitters as of ' + date)
+    worksheet.write(1, 1, str(round(((PLP + VUS + LBB)/totalVars * 100),2)) + '% concordance:')
+    worksheet.write(2, 2, PLP)
+    worksheet.write(2, 3, 'P/LP')
+    worksheet.write(3, 2, VUS)
+    worksheet.write(3, 3, 'VUS')
+    worksheet.write(4, 2, LBB)
+    worksheet.write(4, 3, 'LB/B')
+    worksheet.write(5, 1, str(round(((PLPVUS + PLPLBB + PLPVUSLBB)/totalVars * 100),2)) + '% medically significant differences:')
+    worksheet.write(6, 2, PLPVUS)
+    worksheet.write(6, 3, 'P/LP vs VUS')
+    worksheet.write(7, 2, PLPLBB)
+    worksheet.write(7, 3, 'P/LP vs LB/B')
+    worksheet.write(8, 2, PLPVUSLBB)
+    worksheet.write(8, 3, 'P/LP vs VUS vs LB/B')
+    worksheet.write(9, 1, str(round((VUSLBB/totalVars * 100),2)) + '% other differences:')
+    worksheet.write(10, 2, VUSLBB)
+    worksheet.write(10, 3, 'VUS vs LB/B')
 
 
 def outlier_medsig(varID, sub, headerSubs, p2fileVarIDs, arg):
@@ -803,7 +893,6 @@ def get_pathCounts(sub, varID, arg):
                 submitters.append(scvHash[varID][SCV]['Submitter'])
                 p += 1
 
-
         if scvHash[varID][SCV]['ClinSig'] == 'Likely pathogenic':
            #Don't double count (Illumina's) duplicate submissions!!!
             current_sub = scvHash[varID][SCV]['Submitter'] + scvHash[varID][SCV]['ClinSig']
@@ -917,6 +1006,141 @@ def get_duplicates(sub, varID):
     return(duplicate_subs, conflict)
 
 
+def get_distVars(varID, headerSubs, p2fileVarIDs, arg):
+    '''This function returns the clinical significance(s) of each VarID'''
+
+    global PLP
+    global VUS
+    global LBB
+    global PLPVUS
+    global PLPLBB
+    global PLPVUSLBB
+    global VUSLBB
+
+    all = []
+
+    submitters, p, lp, plp, vus, lb, b, lbb, vlbb, total, other = get_counts(varID, arg)
+
+    if plp + vlbb > 1:
+        if varID not in p2fileVarIDs.keys():
+            p2fileVarIDs[varID] = {}
+
+        p2fileVarIDs[varID] = {'Total':total, 'PLP':plp, 'VUS':vus, 'LBB':lbb, 'VLBB': vlbb, 'Misc':other}
+
+        if submitters:
+            headerSubs.extend(submitters)
+
+        if plp != 0:
+            all.append('P/LP')
+        if vus != 0:
+            all.append('VUS')
+        if lbb != 0:
+            all.append('LB/B')
+
+        all = ' vs '. join(all)
+
+        if all == 'P/LP':
+            PLP += 1
+        if all == 'VUS':
+            VUS += 1
+        if all == 'LB/B':
+            LBB += 1
+        if all == 'P/LP vs VUS':
+            PLPVUS += 1
+        if all == 'P/LP vs LB/B':
+            PLPLBB += 1
+        if all == 'P/LP vs VUS vs LB/B':
+            PLPVUSLBB += 1
+        if all == 'VUS vs LB/B':
+            VUSLBB += 1
+
+        p2fileVarIDs[varID].update({'All_significances':all})
+
+    headerSubs = sorted(set(headerSubs))
+
+    return(p2fileVarIDs, headerSubs)
+
+
+def get_counts(varID, arg):
+    '''This function returns the counts of ACMG pathogenicities for each VarID'''
+
+    submitters = []
+    p = 0
+    lp = 0
+    vus = 0
+    lb = 0
+    b = 0
+    other = 0
+    unique_subs = []
+
+    for SCV in scvHash[varID]:
+
+        if scvHash[varID][SCV]['ClinSig'] == 'Pathogenic':
+           #Don't double count (Illumina's) duplicate submissions!!!
+            current_sub = scvHash[varID][SCV]['Submitter'] + scvHash[varID][SCV]['ClinSig']
+            if (arg == 'OneStar' and scvHash[varID][SCV]['ReviewStatus'] == 'criteria provided, single submitter' and 'clinical testing' in scvHash[varID][SCV]['ColMeth']) or (arg == 'ZeroStar' and scvHash[varID][SCV]['ReviewStatus'] == 'no assertion criteria provided'):
+                if current_sub not in unique_subs:
+                    unique_subs.append(current_sub)
+                    submitters.append(scvHash[varID][SCV]['Submitter'])
+                    p += 1
+
+        if scvHash[varID][SCV]['ClinSig'] == 'Likely pathogenic':
+           #Don't double count (Illumina's) duplicate submissions!!!
+            current_sub = scvHash[varID][SCV]['Submitter'] + scvHash[varID][SCV]['ClinSig']
+
+            if (arg == 'OneStar' and scvHash[varID][SCV]['ReviewStatus'] == 'criteria provided, single submitter' and 'clinical testing' in scvHash[varID][SCV]['ColMeth']) or (arg == 'ZeroStar' and scvHash[varID][SCV]['ReviewStatus'] == 'no assertion criteria provided'):
+                if current_sub not in unique_subs:
+                    unique_subs.append(current_sub)
+                    submitters.append(scvHash[varID][SCV]['Submitter'])
+                    lp += 1
+
+        if scvHash[varID][SCV]['ClinSig'] == 'Uncertain significance':
+           #Don't double count (Illumina's) duplicate submissions!!!
+            current_sub = scvHash[varID][SCV]['Submitter'] + scvHash[varID][SCV]['ClinSig']
+
+            if (arg == 'OneStar' and scvHash[varID][SCV]['ReviewStatus'] == 'criteria provided, single submitter' and 'clinical testing' in scvHash[varID][SCV]['ColMeth']) or (arg == 'ZeroStar' and scvHash[varID][SCV]['ReviewStatus'] == 'no assertion criteria provided'):
+                if current_sub not in unique_subs:
+                    unique_subs.append(current_sub)
+                    submitters.append(scvHash[varID][SCV]['Submitter'])
+                    vus += 1
+
+        if scvHash[varID][SCV]['ClinSig'] == 'Likely benign':
+           #Don't double count (Illumina's) duplicate submissions!!!
+            current_sub = scvHash[varID][SCV]['Submitter'] + scvHash[varID][SCV]['ClinSig']
+
+            if (arg == 'OneStar' and scvHash[varID][SCV]['ReviewStatus'] == 'criteria provided, single submitter' and 'clinical testing' in scvHash[varID][SCV]['ColMeth']) or (arg == 'ZeroStar' and scvHash[varID][SCV]['ReviewStatus'] == 'no assertion criteria provided'):
+                if current_sub not in unique_subs:
+                    unique_subs.append(current_sub)
+                    submitters.append(scvHash[varID][SCV]['Submitter'])
+                    lb += 1
+
+        if scvHash[varID][SCV]['ClinSig'] == 'Benign':
+           #Don't double count (Illumina's) duplicate submissions!!!
+            current_sub = scvHash[varID][SCV]['Submitter'] + scvHash[varID][SCV]['ClinSig']
+
+            if (arg == 'OneStar' and scvHash[varID][SCV]['ReviewStatus'] == 'criteria provided, single submitter' and 'clinical testing' in scvHash[varID][SCV]['ColMeth']) or (arg == 'ZeroStar' and scvHash[varID][SCV]['ReviewStatus'] == 'no assertion criteria provided'):
+                if current_sub not in unique_subs:
+                    unique_subs.append(current_sub)
+                    submitters.append(scvHash[varID][SCV]['Submitter'])
+                    b += 1
+
+        else:
+            #Don't double count (Illumina's) duplicate submissions!!!
+            current_sub = scvHash[varID][SCV]['Submitter'] + scvHash[varID][SCV]['ClinSig']
+            if (arg == 'OneStar' and scvHash[varID][SCV]['ReviewStatus'] == 'criteria provided, single submitter' and 'clinical testing' in scvHash[varID][SCV]['ColMeth']) or (arg == 'ZeroStar' and scvHash[varID][SCV]['ReviewStatus'] == 'no assertion criteria provided'):
+                if current_sub not in unique_subs:
+                    unique_subs.append(current_sub)
+                    submitters.append(scvHash[varID][SCV]['Submitter'])
+                    other += 1
+
+    plp = p+lp
+    lbb = lb+b
+    vlbb = vus+lb+b
+    total = plp+vus+lbb+other
+
+    return(submitters, p, lp, plp, vus, lb, b, lbb, vlbb, total, other)
+
+
 def get_varSubs(sub, varID):
     '''This function returns the list of variant submitters'''
 
@@ -961,7 +1185,7 @@ def print_header(sub, p2fileVarIDs, headerSubs, worksheet, tab):
             worksheet.write(0, k, 'EP or Practice Guideline')
             k+=1
 
-            if tab == 3:
+            if tab == 3 or tab == 0:
                 worksheet.write(0, k, 'All_significances')
             elif tab == 5:
                 worksheet.write(0, k, 'Intralab_conflicts')
@@ -969,16 +1193,17 @@ def print_header(sub, p2fileVarIDs, headerSubs, worksheet, tab):
                 worksheet.write(0, k, 'Consensus_significance')
             k+=1
 
-        worksheet.write(0, k, sub + '_significance(s)')
-        k+=1
-        worksheet.write(0, k, sub + '_SCVid(s)')
-        k+=1
-        worksheet.write(0, k, sub + '_ReviewStatus(s)')
-        k+=1
-        worksheet.write(0, k, sub + '_most_recent_DateLastEvaluated')
-        k+=1
-        worksheet.write(0, k, sub + '_condition(s)')
-        k+=1
+        if tab != 0:
+            worksheet.write(0, k, sub + '_significance(s)')
+            k+=1
+            worksheet.write(0, k, sub + '_SCVid(s)')
+            k+=1
+            worksheet.write(0, k, sub + '_ReviewStatus(s)')
+            k+=1
+            worksheet.write(0, k, sub + '_most_recent_DateLastEvaluated')
+            k+=1
+            worksheet.write(0, k, sub + '_condition(s)')
+            k+=1
 
         for head in headerSubs:
             if head != sub:
@@ -1005,6 +1230,7 @@ def print_variants(sub, worksheet, row, varID, headerSubs, varSubs, p2fileVarIDs
     k = 0
     worksheet.write(row, k, varID)
     k+=1
+
     if HGVSHash[varID]['GeneSym']:
         worksheet.write(row, k, HGVSHash[varID]['GeneSym'])
     k+=1
@@ -1024,7 +1250,7 @@ def print_variants(sub, worksheet, row, varID, headerSubs, varSubs, p2fileVarIDs
            worksheet.write(row, k, 'N/A')
        k+=1
 
-    if tab == 3:
+    if tab == 3 or tab == 0:
         worksheet.write(row, k, p2fileVarIDs[varID]['All_significances'])
         k+=1
     elif tab == 5:
@@ -1047,47 +1273,48 @@ def print_variants(sub, worksheet, row, varID, headerSubs, varSubs, p2fileVarIDs
         worksheet.write(row, k, p2fileVarIDs[varID]['Consensus'])
         k+=1
 
-    clinSig = []
-    scvs= []
-    revStats = []
-    dle = []
-    conditions = []
+    if tab != 0:
+        clinSig = []
+        scvs= []
+        revStats = []
+        dle = []
+        conditions = []
 
-    for scv in scvHash[varID]:
-        if (tab == 1 and scvHash[varID][scv]['Submitter'] == sub and \
-           (((scvHash[varID][scv]['ClinSig'] == 'Pathogenic' or scvHash[varID][scv]['ClinSig'] == 'Likely pathogenic') and any(x in p2fileVarIDs[varID]['Consensus'] for x in ['VUS','LB','B','LB/B','VUS/LB/B','VUS/LB','VUS/B'])) or \
-           ((scvHash[varID][scv]['ClinSig'] == 'Uncertain significance' or scvHash[varID][scv]['ClinSig'] == 'Likely benign' or scvHash[varID][scv]['ClinSig'] == 'Benign') and \
-           any(x in p2fileVarIDs[varID]['Consensus'] for x in ['P','LP','P/LP'])))) or \
-           (tab == 2 and scvHash[varID][scv]['Submitter'] == sub and \
-           (((scvHash[varID][scv]['ClinSig'] == 'Pathogenic' or scvHash[varID][scv]['ClinSig'] == 'Likely pathogenic') and any(x in p2fileVarIDs[varID]['Consensus'] for x in ['P','LP','P/LP'])) or \
-           ((scvHash[varID][scv]['ClinSig'] == 'Uncertain significance' or scvHash[varID][scv]['ClinSig'] == 'Likely benign' or scvHash[varID][scv]['ClinSig'] == 'Benign') and \
-           any(x in p2fileVarIDs[varID]['Consensus'] for x in ['VUS','LB','B','LB/B','VUS/LB/B','VUS/LB','VUS/B'])))) or \
-           ((tab != 1 or tab != 2) and scvHash[varID][scv]['Submitter'] == sub and \
-           (scvHash[varID][scv]['ClinSig'] == 'Pathogenic' or scvHash[varID][scv]['ClinSig'] == 'Likely pathogenic' or \
-           scvHash[varID][scv]['ClinSig'] == 'Uncertain significance' or scvHash[varID][scv]['ClinSig'] == 'Likely benign' or scvHash[varID][scv]['ClinSig'] == 'Benign')):
-            clinSig.append(scvHash[varID][scv]['ClinSig'])
-            scvs.append(scv)
-            revStats.append(scvHash[varID][scv]['ReviewStatus'])
-            dle.append(print_date(scvHash[varID][scv]['DateLastEval']))
-            conditions.append(scvHash[varID][scv]['Condition'])
+        for scv in scvHash[varID]:
+            if (tab == 1 and scvHash[varID][scv]['Submitter'] == sub and \
+               (((scvHash[varID][scv]['ClinSig'] == 'Pathogenic' or scvHash[varID][scv]['ClinSig'] == 'Likely pathogenic') and any(x in p2fileVarIDs[varID]['Consensus'] for x in ['VUS','LB','B','LB/B','VUS/LB/B','VUS/LB','VUS/B'])) or \
+               ((scvHash[varID][scv]['ClinSig'] == 'Uncertain significance' or scvHash[varID][scv]['ClinSig'] == 'Likely benign' or scvHash[varID][scv]['ClinSig'] == 'Benign') and \
+               any(x in p2fileVarIDs[varID]['Consensus'] for x in ['P','LP','P/LP'])))) or \
+               (tab == 2 and scvHash[varID][scv]['Submitter'] == sub and \
+               (((scvHash[varID][scv]['ClinSig'] == 'Pathogenic' or scvHash[varID][scv]['ClinSig'] == 'Likely pathogenic') and any(x in p2fileVarIDs[varID]['Consensus'] for x in ['P','LP','P/LP'])) or \
+               ((scvHash[varID][scv]['ClinSig'] == 'Uncertain significance' or scvHash[varID][scv]['ClinSig'] == 'Likely benign' or scvHash[varID][scv]['ClinSig'] == 'Benign') and \
+               any(x in p2fileVarIDs[varID]['Consensus'] for x in ['VUS','LB','B','LB/B','VUS/LB/B','VUS/LB','VUS/B'])))) or \
+               ((tab != 1 or tab != 2) and scvHash[varID][scv]['Submitter'] == sub and \
+               (scvHash[varID][scv]['ClinSig'] == 'Pathogenic' or scvHash[varID][scv]['ClinSig'] == 'Likely pathogenic' or \
+               scvHash[varID][scv]['ClinSig'] == 'Uncertain significance' or scvHash[varID][scv]['ClinSig'] == 'Likely benign' or scvHash[varID][scv]['ClinSig'] == 'Benign')):
+                clinSig.append(scvHash[varID][scv]['ClinSig'])
+                scvs.append(scv)
+                revStats.append(scvHash[varID][scv]['ReviewStatus'])
+                dle.append(print_date(scvHash[varID][scv]['DateLastEval']))
+                conditions.append(scvHash[varID][scv]['Condition'])
 
-    clinSigList = ' | '. join(sorted(set(clinSig)))
-    scvList = ' | '. join(sorted(set(scvs)))
-    revList = ' | '. join(sorted(set(revStats)))
-    dleList = sorted(set(dle))
-    dle = dleList[-1]
-    conditionsList = ' | '. join(sorted(set(conditions)))
+        clinSigList = ' | '. join(sorted(set(clinSig)))
+        scvList = ' | '. join(sorted(set(scvs)))
+        revList = ' | '. join(sorted(set(revStats)))
+        dleList = sorted(set(dle))
+        dle = dleList[-1]
+        conditionsList = ' | '. join(sorted(set(conditions)))
 
-    worksheet.write(row, k, clinSigList)
-    k+=1
-    worksheet.write(row, k, scvList)
-    k+=1
-    worksheet.write(row, k, revList)
-    k+=1
-    worksheet.write(row, k, dle)
-    k+=1
-    worksheet.write(row, k, conditionsList)
-    k+=1
+        worksheet.write(row, k, clinSigList)
+        k+=1
+        worksheet.write(row, k, scvList)
+        k+=1
+        worksheet.write(row, k, revList)
+        k+=1
+        worksheet.write(row, k, dle)
+        k+=1
+        worksheet.write(row, k, conditionsList)
+        k+=1
 
     for headerSub in headerSubs:
         p2file = 'no'
